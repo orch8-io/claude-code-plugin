@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Tag must match plugin.json version
+        run: |
+          v="$(node -p 'require("./.claude-plugin/plugin.json").version')"
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != plugin.json v$v"; exit 1; }
+      - run: node scripts/validate.mjs
+      - name: Archive the plugin
+        run: |
+          mkdir dist
+          git archive --format=zip --prefix="orch8-claude-code-plugin/" \
+            -o "dist/orch8-claude-code-plugin-$GITHUB_REF_NAME.zip" HEAD \
+            .claude-plugin .mcp.json skills README.md LICENSE
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" --generate-notes --verify-tag \
+            --notes "Install: \`claude plugin marketplace add orch8-io/claude-code-plugin\` then \`claude plugin install orch8@orch8\`."
