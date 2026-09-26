@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "orch8": {
+      "type": "http",
+      "url": "${user_config.orch8_url}/api/v1/mcp",
+      "headers": {
+        "x-api-key": "${user_config.orch8_api_key}",
+        "x-tenant-id": "${user_config.orch8_tenant_id}"
+      }
+    }
+  }
+}
